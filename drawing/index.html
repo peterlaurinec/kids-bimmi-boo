@@ -6,15 +6,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#3B82F6">
-    <title>Dot to Dot - Connect & Trace!</title>
+    <title>Trace & Learn - Draw Letters & Numbers!</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
 
     <style>
-        /* ===========================================
-           CONNECT THE DOTS GAME - Bimmi Boo Style
-           =========================================== */
-
         * {
             margin: 0;
             padding: 0;
@@ -37,8 +33,8 @@
             --bg-start: #3B82F6;
             --bg-end: #A855F7;
 
-            --dot-size: 60px;
-            --line-width: 8px;
+            --line-width: 12px;
+            --guide-color: #E5E7EB;
         }
 
         html, body {
@@ -56,9 +52,7 @@
             flex-direction: column;
         }
 
-        /* ===========================================
-           HEADER
-           =========================================== */
+        /* HEADER */
         .header {
             display: flex;
             justify-content: space-between;
@@ -70,18 +64,18 @@
         }
 
         .title {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 800;
             color: white;
             text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
         }
 
-        .progress-display {
+        .current-item {
             background: white;
-            padding: 10px 20px;
+            padding: 8px 25px;
             border-radius: 50px;
-            font-size: 1.2rem;
-            font-weight: 700;
+            font-size: 1.8rem;
+            font-weight: 800;
             color: var(--color-purple);
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
@@ -105,23 +99,18 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        .btn:active {
-            transform: scale(0.9);
-        }
-
-        .btn-white {
-            background: white;
-            color: var(--color-blue);
-        }
-
+        .btn:active { transform: scale(0.9); }
+        .btn-white { background: white; color: var(--color-blue); }
         .btn-colored {
             background: linear-gradient(135deg, var(--color-green) 0%, var(--color-cyan) 100%);
             color: white;
         }
+        .btn-yellow {
+            background: linear-gradient(135deg, var(--color-yellow) 0%, var(--color-orange) 100%);
+            color: white;
+        }
 
-        /* ===========================================
-           CANVAS AREA
-           =========================================== */
+        /* CANVAS AREA */
         .canvas-container {
             flex: 1;
             display: flex;
@@ -137,8 +126,6 @@
             box-shadow: 0 15px 50px rgba(0,0,0,0.3);
             position: relative;
             overflow: hidden;
-            max-width: 100%;
-            max-height: 100%;
         }
 
         #gameCanvas {
@@ -146,9 +133,28 @@
             touch-action: none;
         }
 
-        /* ===========================================
-           COLOR PICKER
-           =========================================== */
+        /* Hint text */
+        .hint-text {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .hint-text.visible {
+            opacity: 1;
+        }
+
+        /* COLOR PICKER */
         .color-picker {
             position: absolute;
             bottom: 20px;
@@ -171,18 +177,43 @@
             transition: transform 0.15s ease, border-color 0.15s ease;
         }
 
-        .color-btn:active {
-            transform: scale(0.9);
-        }
-
+        .color-btn:active { transform: scale(0.9); }
         .color-btn.active {
             border-color: #1F2937;
             transform: scale(1.15);
         }
 
-        /* ===========================================
-           CATEGORY SELECTOR (Bottom Sheet)
-           =========================================== */
+        /* NAVIGATION ARROWS */
+        .nav-arrows {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            transform: translateY(-50%);
+            display: flex;
+            justify-content: space-between;
+            padding: 0 5px;
+            pointer-events: none;
+        }
+
+        .nav-btn {
+            width: 50px;
+            height: 80px;
+            border: none;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.9);
+            font-size: 1.8rem;
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:active { transform: scale(0.95); }
+
+        /* CATEGORY SELECTOR */
         .category-overlay {
             position: fixed;
             top: 0;
@@ -196,9 +227,7 @@
             z-index: 100;
         }
 
-        .category-overlay.active {
-            display: flex;
-        }
+        .category-overlay.active { display: flex; }
 
         .category-panel {
             background: white;
@@ -219,9 +248,7 @@
             margin-bottom: 25px;
         }
 
-        .category-group {
-            margin-bottom: 25px;
-        }
+        .category-group { margin-bottom: 25px; }
 
         .category-label {
             font-size: 1.1rem;
@@ -247,10 +274,7 @@
             transition: all 0.15s ease;
         }
 
-        .category-btn:active {
-            transform: scale(0.95);
-        }
-
+        .category-btn:active { transform: scale(0.95); }
         .category-btn.active {
             border-color: var(--color-blue);
             background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
@@ -259,7 +283,7 @@
 
         .item-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
             gap: 10px;
             margin-top: 15px;
         }
@@ -269,7 +293,7 @@
             border: 3px solid #E5E7EB;
             border-radius: 16px;
             background: white;
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.15s ease;
@@ -278,51 +302,27 @@
             justify-content: center;
         }
 
-        .item-btn:active {
-            transform: scale(0.95);
-        }
-
+        .item-btn:active { transform: scale(0.95); }
         .item-btn.active {
             border-color: var(--color-blue);
             background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
             color: var(--color-blue);
         }
 
-        .item-btn.completed {
-            border-color: var(--color-green);
-            background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
-        }
-
-        .item-btn.completed::after {
-            content: '✓';
-            font-size: 0.8rem;
-            position: absolute;
-            bottom: 2px;
-            right: 5px;
-            color: var(--color-green);
-        }
-
-        .start-btn {
+        .close-btn {
             width: 100%;
-            padding: 20px;
+            padding: 18px;
             margin-top: 20px;
             border: none;
             border-radius: 20px;
-            background: linear-gradient(135deg, var(--color-green) 0%, var(--color-cyan) 100%);
+            background: linear-gradient(135deg, var(--color-blue) 0%, var(--color-purple) 100%);
             color: white;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
         }
 
-        .start-btn:active {
-            transform: scale(0.98);
-        }
-
-        /* ===========================================
-           CELEBRATION OVERLAY
-           =========================================== */
+        /* CELEBRATION */
         .celebration {
             position: fixed;
             top: 0;
@@ -337,9 +337,7 @@
             z-index: 200;
         }
 
-        .celebration.active {
-            display: flex;
-        }
+        .celebration.active { display: flex; }
 
         .celebration-content {
             text-align: center;
@@ -371,30 +369,7 @@
             font-weight: 700;
         }
 
-        /* ===========================================
-           TRACING MODE INDICATOR
-           =========================================== */
-        .mode-indicator {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: white;
-            padding: 10px 25px;
-            border-radius: 50px;
-            font-weight: 700;
-            color: var(--color-purple);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            display: none;
-        }
-
-        .mode-indicator.active {
-            display: block;
-        }
-
-        /* ===========================================
-           ANIMATIONS
-           =========================================== */
+        /* ANIMATIONS */
         @keyframes celebrate {
             0% { transform: scale(0) rotate(-10deg); opacity: 0; }
             50% { transform: scale(1.1) rotate(5deg); }
@@ -404,17 +379,6 @@
         @keyframes float {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-20px); }
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-        }
-
-        @keyframes dotComplete {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.5); }
-            100% { transform: scale(1); }
         }
 
         .confetti {
@@ -432,37 +396,26 @@
             100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
 
-        /* ===========================================
-           RESPONSIVE
-           =========================================== */
+        /* RESPONSIVE */
         @media (max-width: 500px) {
-            :root {
-                --dot-size: 50px;
-                --line-width: 6px;
-            }
-
-            .title { font-size: 1.2rem; }
+            :root { --line-width: 10px; }
+            .title { font-size: 1.1rem; }
+            .current-item { font-size: 1.5rem; padding: 6px 18px; }
             .color-btn { width: 38px; height: 38px; }
             .color-picker { gap: 8px; padding: 10px 15px; }
+            .nav-btn { width: 40px; height: 60px; font-size: 1.4rem; }
         }
 
         @media (min-width: 768px) {
-            :root {
-                --dot-size: 70px;
-                --line-width: 10px;
-            }
-
+            :root { --line-width: 16px; }
             .celebration-shape { font-size: 14rem; }
         }
 
-        /* Landscape adjustments */
         @media (orientation: landscape) and (max-height: 500px) {
-            :root {
-                --dot-size: 45px;
-                --line-width: 5px;
-            }
+            :root { --line-width: 8px; }
             .header { padding: 8px 15px; }
             .color-picker { bottom: 10px; }
+            .nav-btn { height: 50px; }
         }
     </style>
 </head>
@@ -470,14 +423,12 @@
     <!-- HEADER -->
     <header class="header">
         <a href="../" class="btn btn-white" aria-label="Home">🏠</a>
-        <h1 class="title">Dot to Dot</h1>
-        <div class="progress-display">
-            <span id="dotProgress">0/0</span>
-        </div>
+        <h1 class="title">Trace & Learn</h1>
+        <div class="current-item" id="currentItem">A</div>
         <div class="header-buttons">
             <button class="btn btn-white" id="soundBtn">🔊</button>
             <button class="btn btn-white" id="menuBtn">📋</button>
-            <button class="btn btn-colored" id="resetBtn">🔄</button>
+            <button class="btn btn-yellow" id="clearBtn">🗑️</button>
         </div>
     </header>
 
@@ -487,9 +438,14 @@
             <canvas id="gameCanvas"></canvas>
         </div>
 
-        <div class="mode-indicator" id="modeIndicator">✏️ Trace Mode - Draw over the shape!</div>
+        <div class="nav-arrows">
+            <button class="nav-btn" id="prevBtn">◀</button>
+            <button class="nav-btn" id="nextBtn">▶</button>
+        </div>
 
-        <div class="color-picker" id="colorPicker">
+        <div class="hint-text" id="hintText">Trace the letter with your finger! ✏️</div>
+
+        <div class="color-picker">
             <button class="color-btn active" data-color="#EF4444" style="background: #EF4444;"></button>
             <button class="color-btn" data-color="#F97316" style="background: #F97316;"></button>
             <button class="color-btn" data-color="#FBBF24" style="background: #FBBF24;"></button>
@@ -503,7 +459,7 @@
     <!-- CATEGORY SELECTOR -->
     <div class="category-overlay" id="categoryOverlay">
         <div class="category-panel">
-            <h2 class="category-title">✏️ Choose What to Draw</h2>
+            <h2 class="category-title">✏️ What to Trace?</h2>
 
             <div class="category-group">
                 <div class="category-label">Category</div>
@@ -516,12 +472,10 @@
 
             <div class="category-group">
                 <div class="category-label" id="itemLabel">Pick a Letter</div>
-                <div class="item-grid" id="itemGrid">
-                    <!-- Generated by JS -->
-                </div>
+                <div class="item-grid" id="itemGrid"></div>
             </div>
 
-            <button class="start-btn" id="startBtn">Let's Draw! ✏️</button>
+            <button class="close-btn" id="closeMenuBtn">Done ✓</button>
         </div>
     </div>
 
@@ -529,211 +483,179 @@
     <div class="celebration" id="celebration">
         <div class="celebration-content">
             <div class="celebration-shape" id="celebrationShape">A</div>
-            <div class="celebration-text">Amazing! 🌟</div>
+            <div class="celebration-text">Great Job! 🌟</div>
             <div class="celebration-buttons">
-                <button class="btn btn-white" id="traceBtn">✏️ Trace It</button>
-                <button class="btn btn-colored" id="nextBtn">Next ➡️</button>
+                <button class="btn btn-white" id="againBtn">🔄 Again</button>
+                <button class="btn btn-colored" id="nextItemBtn">Next ➡️</button>
             </div>
         </div>
     </div>
 
     <script>
-        /* ===========================================
-           DOT TO DOT GAME - Connect & Trace
-           =========================================== */
-
         // ===========================================
-        // DOT DATA - Coordinates for each shape
-        // Dots are defined as percentages of canvas size
+        // SHAPE DATA - Stroke paths for tracing
+        // Points as percentages, multiple strokes per shape
         // ===========================================
 
-        const DOT_DATA = {
+        const SHAPE_DATA = {
             letters: {
                 'A': [
-                    {x: 50, y: 90}, {x: 30, y: 50}, {x: 50, y: 10},
-                    {x: 70, y: 50}, {x: 50, y: 90}, {x: 35, y: 65}, {x: 65, y: 65}
+                    [{x:50,y:85}, {x:30,y:50}, {x:50,y:15}],
+                    [{x:50,y:15}, {x:70,y:50}, {x:50,y:85}],
+                    [{x:35,y:60}, {x:65,y:60}]
                 ],
                 'B': [
-                    {x: 30, y: 90}, {x: 30, y: 10}, {x: 60, y: 10},
-                    {x: 70, y: 25}, {x: 60, y: 50}, {x: 30, y: 50},
-                    {x: 65, y: 50}, {x: 75, y: 70}, {x: 60, y: 90}, {x: 30, y: 90}
+                    [{x:30,y:85}, {x:30,y:15}],
+                    [{x:30,y:15}, {x:55,y:15}, {x:65,y:25}, {x:65,y:40}, {x:55,y:50}, {x:30,y:50}],
+                    [{x:30,y:50}, {x:60,y:50}, {x:70,y:62}, {x:70,y:75}, {x:58,y:85}, {x:30,y:85}]
                 ],
                 'C': [
-                    {x: 70, y: 25}, {x: 50, y: 10}, {x: 30, y: 25},
-                    {x: 25, y: 50}, {x: 30, y: 75}, {x: 50, y: 90}, {x: 70, y: 75}
+                    [{x:70,y:30}, {x:55,y:18}, {x:40,y:15}, {x:28,y:25}, {x:22,y:50}, {x:28,y:75}, {x:40,y:85}, {x:55,y:82}, {x:70,y:70}]
                 ],
                 'D': [
-                    {x: 30, y: 90}, {x: 30, y: 10}, {x: 55, y: 10},
-                    {x: 75, y: 30}, {x: 75, y: 70}, {x: 55, y: 90}, {x: 30, y: 90}
+                    [{x:30,y:85}, {x:30,y:15}],
+                    [{x:30,y:15}, {x:55,y:15}, {x:72,y:30}, {x:75,y:50}, {x:72,y:70}, {x:55,y:85}, {x:30,y:85}]
                 ],
                 'E': [
-                    {x: 70, y: 10}, {x: 30, y: 10}, {x: 30, y: 50},
-                    {x: 60, y: 50}, {x: 30, y: 50}, {x: 30, y: 90}, {x: 70, y: 90}
+                    [{x:65,y:15}, {x:30,y:15}, {x:30,y:85}, {x:65,y:85}],
+                    [{x:30,y:50}, {x:55,y:50}]
                 ],
                 'F': [
-                    {x: 70, y: 10}, {x: 30, y: 10}, {x: 30, y: 50},
-                    {x: 55, y: 50}, {x: 30, y: 50}, {x: 30, y: 90}
+                    [{x:65,y:15}, {x:30,y:15}, {x:30,y:85}],
+                    [{x:30,y:50}, {x:55,y:50}]
                 ],
                 'G': [
-                    {x: 70, y: 25}, {x: 50, y: 10}, {x: 30, y: 25},
-                    {x: 25, y: 50}, {x: 30, y: 75}, {x: 50, y: 90},
-                    {x: 70, y: 75}, {x: 70, y: 50}, {x: 50, y: 50}
+                    [{x:70,y:30}, {x:55,y:18}, {x:40,y:15}, {x:28,y:25}, {x:22,y:50}, {x:28,y:75}, {x:40,y:85}, {x:55,y:82}, {x:70,y:70}, {x:70,y:50}, {x:50,y:50}]
                 ],
                 'H': [
-                    {x: 30, y: 10}, {x: 30, y: 90}, {x: 30, y: 50},
-                    {x: 70, y: 50}, {x: 70, y: 10}, {x: 70, y: 90}
+                    [{x:30,y:15}, {x:30,y:85}],
+                    [{x:70,y:15}, {x:70,y:85}],
+                    [{x:30,y:50}, {x:70,y:50}]
                 ],
                 'I': [
-                    {x: 35, y: 10}, {x: 65, y: 10}, {x: 50, y: 10},
-                    {x: 50, y: 90}, {x: 35, y: 90}, {x: 65, y: 90}
+                    [{x:35,y:15}, {x:65,y:15}],
+                    [{x:50,y:15}, {x:50,y:85}],
+                    [{x:35,y:85}, {x:65,y:85}]
                 ],
                 'J': [
-                    {x: 40, y: 10}, {x: 70, y: 10}, {x: 70, y: 70},
-                    {x: 55, y: 90}, {x: 35, y: 90}, {x: 25, y: 70}
+                    [{x:40,y:15}, {x:70,y:15}],
+                    [{x:60,y:15}, {x:60,y:70}, {x:50,y:85}, {x:35,y:85}, {x:28,y:75}]
                 ],
                 'K': [
-                    {x: 30, y: 10}, {x: 30, y: 90}, {x: 30, y: 55},
-                    {x: 70, y: 10}, {x: 30, y: 55}, {x: 70, y: 90}
+                    [{x:30,y:15}, {x:30,y:85}],
+                    [{x:70,y:15}, {x:30,y:55}, {x:70,y:85}]
                 ],
                 'L': [
-                    {x: 30, y: 10}, {x: 30, y: 90}, {x: 70, y: 90}
+                    [{x:30,y:15}, {x:30,y:85}, {x:70,y:85}]
                 ],
                 'M': [
-                    {x: 20, y: 90}, {x: 20, y: 10}, {x: 50, y: 50},
-                    {x: 80, y: 10}, {x: 80, y: 90}
+                    [{x:20,y:85}, {x:20,y:15}, {x:50,y:55}, {x:80,y:15}, {x:80,y:85}]
                 ],
                 'N': [
-                    {x: 25, y: 90}, {x: 25, y: 10}, {x: 75, y: 90}, {x: 75, y: 10}
+                    [{x:25,y:85}, {x:25,y:15}, {x:75,y:85}, {x:75,y:15}]
                 ],
                 'O': [
-                    {x: 50, y: 10}, {x: 30, y: 25}, {x: 25, y: 50},
-                    {x: 30, y: 75}, {x: 50, y: 90}, {x: 70, y: 75},
-                    {x: 75, y: 50}, {x: 70, y: 25}, {x: 50, y: 10}
+                    [{x:50,y:15}, {x:30,y:20}, {x:22,y:40}, {x:22,y:60}, {x:30,y:80}, {x:50,y:85}, {x:70,y:80}, {x:78,y:60}, {x:78,y:40}, {x:70,y:20}, {x:50,y:15}]
                 ],
                 'P': [
-                    {x: 30, y: 90}, {x: 30, y: 10}, {x: 60, y: 10},
-                    {x: 75, y: 25}, {x: 75, y: 40}, {x: 60, y: 55}, {x: 30, y: 55}
+                    [{x:30,y:85}, {x:30,y:15}],
+                    [{x:30,y:15}, {x:58,y:15}, {x:70,y:28}, {x:70,y:42}, {x:58,y:55}, {x:30,y:55}]
                 ],
                 'Q': [
-                    {x: 50, y: 10}, {x: 30, y: 25}, {x: 25, y: 50},
-                    {x: 30, y: 75}, {x: 50, y: 90}, {x: 70, y: 75},
-                    {x: 75, y: 50}, {x: 70, y: 25}, {x: 50, y: 10},
-                    {x: 55, y: 70}, {x: 75, y: 95}
+                    [{x:50,y:15}, {x:30,y:20}, {x:22,y:40}, {x:22,y:60}, {x:30,y:80}, {x:50,y:85}, {x:70,y:80}, {x:78,y:60}, {x:78,y:40}, {x:70,y:20}, {x:50,y:15}],
+                    [{x:55,y:70}, {x:75,y:92}]
                 ],
                 'R': [
-                    {x: 30, y: 90}, {x: 30, y: 10}, {x: 60, y: 10},
-                    {x: 70, y: 25}, {x: 60, y: 50}, {x: 30, y: 50}, {x: 70, y: 90}
+                    [{x:30,y:85}, {x:30,y:15}],
+                    [{x:30,y:15}, {x:58,y:15}, {x:68,y:28}, {x:68,y:42}, {x:55,y:52}, {x:30,y:52}],
+                    [{x:50,y:52}, {x:70,y:85}]
                 ],
                 'S': [
-                    {x: 70, y: 20}, {x: 55, y: 10}, {x: 40, y: 15},
-                    {x: 30, y: 30}, {x: 40, y: 45}, {x: 60, y: 55},
-                    {x: 70, y: 70}, {x: 60, y: 85}, {x: 45, y: 90}, {x: 30, y: 80}
+                    [{x:68,y:25}, {x:55,y:15}, {x:40,y:15}, {x:28,y:25}, {x:28,y:38}, {x:40,y:50}, {x:60,y:50}, {x:72,y:62}, {x:72,y:75}, {x:60,y:85}, {x:45,y:85}, {x:32,y:75}]
                 ],
                 'T': [
-                    {x: 20, y: 10}, {x: 80, y: 10}, {x: 50, y: 10}, {x: 50, y: 90}
+                    [{x:20,y:15}, {x:80,y:15}],
+                    [{x:50,y:15}, {x:50,y:85}]
                 ],
                 'U': [
-                    {x: 25, y: 10}, {x: 25, y: 70}, {x: 40, y: 90},
-                    {x: 60, y: 90}, {x: 75, y: 70}, {x: 75, y: 10}
+                    [{x:25,y:15}, {x:25,y:65}, {x:35,y:82}, {x:50,y:85}, {x:65,y:82}, {x:75,y:65}, {x:75,y:15}]
                 ],
                 'V': [
-                    {x: 20, y: 10}, {x: 50, y: 90}, {x: 80, y: 10}
+                    [{x:20,y:15}, {x:50,y:85}, {x:80,y:15}]
                 ],
                 'W': [
-                    {x: 10, y: 10}, {x: 30, y: 90}, {x: 50, y: 50},
-                    {x: 70, y: 90}, {x: 90, y: 10}
+                    [{x:10,y:15}, {x:28,y:85}, {x:50,y:45}, {x:72,y:85}, {x:90,y:15}]
                 ],
                 'X': [
-                    {x: 25, y: 10}, {x: 75, y: 90}, {x: 50, y: 50},
-                    {x: 75, y: 10}, {x: 25, y: 90}
+                    [{x:25,y:15}, {x:75,y:85}],
+                    [{x:75,y:15}, {x:25,y:85}]
                 ],
                 'Y': [
-                    {x: 20, y: 10}, {x: 50, y: 50}, {x: 80, y: 10},
-                    {x: 50, y: 50}, {x: 50, y: 90}
+                    [{x:20,y:15}, {x:50,y:50}],
+                    [{x:80,y:15}, {x:50,y:50}, {x:50,y:85}]
                 ],
                 'Z': [
-                    {x: 25, y: 10}, {x: 75, y: 10}, {x: 25, y: 90}, {x: 75, y: 90}
+                    [{x:25,y:15}, {x:75,y:15}, {x:25,y:85}, {x:75,y:85}]
                 ]
             },
             numbers: {
                 '0': [
-                    {x: 50, y: 10}, {x: 30, y: 25}, {x: 25, y: 50},
-                    {x: 30, y: 75}, {x: 50, y: 90}, {x: 70, y: 75},
-                    {x: 75, y: 50}, {x: 70, y: 25}, {x: 50, y: 10}
+                    [{x:50,y:12}, {x:32,y:20}, {x:25,y:40}, {x:25,y:60}, {x:32,y:80}, {x:50,y:88}, {x:68,y:80}, {x:75,y:60}, {x:75,y:40}, {x:68,y:20}, {x:50,y:12}]
                 ],
                 '1': [
-                    {x: 35, y: 25}, {x: 50, y: 10}, {x: 50, y: 90},
-                    {x: 35, y: 90}, {x: 65, y: 90}
+                    [{x:35,y:28}, {x:50,y:15}, {x:50,y:85}],
+                    [{x:35,y:85}, {x:65,y:85}]
                 ],
                 '2': [
-                    {x: 30, y: 25}, {x: 45, y: 10}, {x: 65, y: 15},
-                    {x: 70, y: 30}, {x: 30, y: 90}, {x: 70, y: 90}
+                    [{x:28,y:30}, {x:38,y:18}, {x:55,y:15}, {x:70,y:25}, {x:70,y:38}, {x:28,y:85}, {x:72,y:85}]
                 ],
                 '3': [
-                    {x: 30, y: 20}, {x: 50, y: 10}, {x: 70, y: 25},
-                    {x: 55, y: 45}, {x: 70, y: 65}, {x: 55, y: 85},
-                    {x: 35, y: 90}, {x: 25, y: 80}
+                    [{x:28,y:22}, {x:45,y:12}, {x:62,y:18}, {x:70,y:32}, {x:60,y:48}, {x:50,y:50}],
+                    [{x:50,y:50}, {x:65,y:55}, {x:72,y:70}, {x:62,y:85}, {x:45,y:88}, {x:28,y:78}]
                 ],
                 '4': [
-                    {x: 60, y: 90}, {x: 60, y: 10}, {x: 25, y: 65}, {x: 75, y: 65}
+                    [{x:60,y:85}, {x:60,y:12}],
+                    [{x:60,y:12}, {x:22,y:62}, {x:78,y:62}]
                 ],
                 '5': [
-                    {x: 70, y: 10}, {x: 30, y: 10}, {x: 30, y: 45},
-                    {x: 55, y: 40}, {x: 70, y: 55}, {x: 70, y: 70},
-                    {x: 55, y: 90}, {x: 30, y: 85}
+                    [{x:70,y:15}, {x:30,y:15}, {x:28,y:48}, {x:55,y:42}, {x:72,y:55}, {x:72,y:72}, {x:58,y:88}, {x:35,y:85}, {x:25,y:75}]
                 ],
                 '6': [
-                    {x: 65, y: 15}, {x: 45, y: 10}, {x: 30, y: 30},
-                    {x: 25, y: 60}, {x: 35, y: 85}, {x: 55, y: 90},
-                    {x: 70, y: 75}, {x: 65, y: 55}, {x: 45, y: 50}, {x: 30, y: 60}
+                    [{x:65,y:18}, {x:48,y:12}, {x:32,y:22}, {x:25,y:45}, {x:25,y:68}, {x:35,y:85}, {x:55,y:88}, {x:70,y:78}, {x:72,y:62}, {x:62,y:50}, {x:42,y:48}, {x:28,y:58}]
                 ],
                 '7': [
-                    {x: 25, y: 10}, {x: 75, y: 10}, {x: 45, y: 90}
+                    [{x:25,y:15}, {x:75,y:15}, {x:45,y:85}]
                 ],
                 '8': [
-                    {x: 50, y: 50}, {x: 35, y: 35}, {x: 40, y: 15},
-                    {x: 60, y: 15}, {x: 65, y: 35}, {x: 50, y: 50},
-                    {x: 30, y: 70}, {x: 40, y: 90}, {x: 60, y: 90},
-                    {x: 70, y: 70}, {x: 50, y: 50}
+                    [{x:50,y:50}, {x:35,y:42}, {x:32,y:28}, {x:42,y:15}, {x:58,y:15}, {x:68,y:28}, {x:65,y:42}, {x:50,y:50}],
+                    [{x:50,y:50}, {x:30,y:62}, {x:28,y:75}, {x:40,y:88}, {x:60,y:88}, {x:72,y:75}, {x:70,y:62}, {x:50,y:50}]
                 ],
                 '9': [
-                    {x: 65, y: 40}, {x: 55, y: 20}, {x: 40, y: 15},
-                    {x: 30, y: 30}, {x: 35, y: 45}, {x: 55, y: 50},
-                    {x: 70, y: 40}, {x: 70, y: 70}, {x: 55, y: 90}, {x: 35, y: 85}
+                    [{x:72,y:42}, {x:62,y:50}, {x:42,y:48}, {x:30,y:35}, {x:32,y:22}, {x:48,y:12}, {x:68,y:18}, {x:75,y:38}, {x:72,y:65}, {x:58,y:85}, {x:38,y:88}, {x:28,y:78}]
                 ]
             },
             shapes: {
-                '⭐': [ // Star
-                    {x: 50, y: 5}, {x: 40, y: 35}, {x: 10, y: 35},
-                    {x: 35, y: 55}, {x: 25, y: 90}, {x: 50, y: 70},
-                    {x: 75, y: 90}, {x: 65, y: 55}, {x: 90, y: 35},
-                    {x: 60, y: 35}, {x: 50, y: 5}
+                '⭐': [
+                    [{x:50,y:8}, {x:42,y:35}, {x:12,y:38}, {x:35,y:55}, {x:25,y:88}, {x:50,y:68}, {x:75,y:88}, {x:65,y:55}, {x:88,y:38}, {x:58,y:35}, {x:50,y:8}]
                 ],
-                '❤️': [ // Heart
-                    {x: 50, y: 90}, {x: 15, y: 55}, {x: 10, y: 35},
-                    {x: 20, y: 20}, {x: 35, y: 15}, {x: 50, y: 30},
-                    {x: 65, y: 15}, {x: 80, y: 20}, {x: 90, y: 35},
-                    {x: 85, y: 55}, {x: 50, y: 90}
+                '❤️': [
+                    [{x:50,y:88}, {x:18,y:55}, {x:12,y:35}, {x:22,y:20}, {x:38,y:18}, {x:50,y:32}],
+                    [{x:50,y:32}, {x:62,y:18}, {x:78,y:20}, {x:88,y:35}, {x:82,y:55}, {x:50,y:88}]
                 ],
-                '🏠': [ // House
-                    {x: 20, y: 50}, {x: 50, y: 15}, {x: 80, y: 50},
-                    {x: 80, y: 90}, {x: 20, y: 90}, {x: 20, y: 50},
-                    {x: 40, y: 90}, {x: 40, y: 65}, {x: 60, y: 65}, {x: 60, y: 90}
+                '🏠': [
+                    [{x:15,y:50}, {x:50,y:15}, {x:85,y:50}],
+                    [{x:25,y:50}, {x:25,y:88}, {x:75,y:88}, {x:75,y:50}],
+                    [{x:40,y:88}, {x:40,y:65}, {x:60,y:65}, {x:60,y:88}]
                 ],
-                '🌙': [ // Moon
-                    {x: 70, y: 15}, {x: 50, y: 10}, {x: 30, y: 20},
-                    {x: 20, y: 40}, {x: 20, y: 60}, {x: 30, y: 80},
-                    {x: 50, y: 90}, {x: 70, y: 85}, {x: 55, y: 70},
-                    {x: 50, y: 50}, {x: 55, y: 30}, {x: 70, y: 15}
+                '🌙': [
+                    [{x:72,y:12}, {x:52,y:10}, {x:32,y:18}, {x:18,y:35}, {x:15,y:55}, {x:22,y:75}, {x:42,y:88}, {x:65,y:88}, {x:80,y:75}],
+                    [{x:80,y:75}, {x:62,y:68}, {x:55,y:50}, {x:60,y:30}, {x:72,y:12}]
                 ],
-                '🔷': [ // Diamond
-                    {x: 50, y: 5}, {x: 85, y: 50}, {x: 50, y: 95}, {x: 15, y: 50}, {x: 50, y: 5}
+                '◆': [
+                    [{x:50,y:8}, {x:88,y:50}, {x:50,y:92}, {x:12,y:50}, {x:50,y:8}]
                 ],
-                '🌲': [ // Tree
-                    {x: 50, y: 5}, {x: 25, y: 40}, {x: 35, y: 40},
-                    {x: 20, y: 65}, {x: 35, y: 65}, {x: 35, y: 95},
-                    {x: 65, y: 95}, {x: 65, y: 65}, {x: 80, y: 65},
-                    {x: 65, y: 40}, {x: 75, y: 40}, {x: 50, y: 5}
+                '△': [
+                    [{x:50,y:12}, {x:85,y:85}, {x:15,y:85}, {x:50,y:12}]
                 ]
             }
         };
@@ -745,14 +667,9 @@
         let gameState = {
             category: 'letters',
             currentItem: 'A',
-            dots: [],
-            currentDotIndex: 0,
-            lines: [],
-            isComplete: false,
-            isTracingMode: false,
-            traceLines: [],
+            strokes: [],
             isDrawing: false,
-            lastPoint: null
+            hasDrawn: false
         };
 
         let settings = {
@@ -760,13 +677,12 @@
             soundEnabled: true
         };
 
-        // Canvas references
         let canvas, ctx;
         let canvasWidth = 400;
-        let canvasHeight = 500;
+        let canvasHeight = 450;
 
         // ===========================================
-        // AUDIO SYSTEM (Same as matching game)
+        // AUDIO
         // ===========================================
 
         let audioContext = null;
@@ -774,9 +690,8 @@
 
         async function initAudio() {
             if (!audioContext) {
-                try {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                } catch (e) { return; }
+                try { audioContext = new (window.AudioContext || window.webkitAudioContext)(); }
+                catch (e) { return; }
             }
             if (audioContext.state === 'suspended') {
                 try { await audioContext.resume(); } catch (e) {}
@@ -802,7 +717,7 @@
                 gain.connect(audioContext.destination);
                 osc.frequency.value = freq;
                 osc.type = type;
-                gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gain.gain.setValueAtTime(0.25, audioContext.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + dur);
                 osc.start(audioContext.currentTime);
                 osc.stop(audioContext.currentTime + dur);
@@ -810,44 +725,36 @@
         }
 
         const sounds = {
-            dot: () => playTone(523 + gameState.currentDotIndex * 50, 0.1),
+            draw: () => playTone(440 + Math.random() * 200, 0.05),
             complete: () => {
-                playTone(523, 0.15);
-                setTimeout(() => playTone(659, 0.15), 100);
-                setTimeout(() => playTone(784, 0.2), 200);
-            },
-            trace: () => playTone(330, 0.05),
-            win: () => {
                 [523, 659, 784, 1047].forEach((f, i) => {
-                    setTimeout(() => playTone(f, 0.2), i * 150);
+                    setTimeout(() => playTone(f, 0.15), i * 100);
                 });
             }
         };
 
         // ===========================================
-        // CANVAS SETUP
+        // CANVAS
         // ===========================================
 
         function setupCanvas() {
             canvas = document.getElementById('gameCanvas');
             ctx = canvas.getContext('2d');
-
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
         }
 
         function resizeCanvas() {
             const container = document.querySelector('.canvas-container');
-            const maxWidth = container.clientWidth - 40;
-            const maxHeight = container.clientHeight - 120;
+            const maxWidth = container.clientWidth - 130;
+            const maxHeight = container.clientHeight - 100;
 
-            // Maintain aspect ratio
-            const ratio = 4 / 5;
+            const ratio = 0.9;
             if (maxWidth / maxHeight > ratio) {
-                canvasHeight = Math.min(maxHeight, 600);
+                canvasHeight = Math.min(maxHeight, 550);
                 canvasWidth = canvasHeight * ratio;
             } else {
-                canvasWidth = Math.min(maxWidth, 480);
+                canvasWidth = Math.min(maxWidth, 450);
                 canvasHeight = canvasWidth / ratio;
             }
 
@@ -856,198 +763,88 @@
             canvas.style.width = canvasWidth + 'px';
             canvas.style.height = canvasHeight + 'px';
 
-            drawGame();
+            drawCanvas();
         }
 
         // ===========================================
-        // GAME LOGIC
+        // DRAWING
         // ===========================================
+
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            // Draw guide shape (light in background)
+            drawGuideShape();
+
+            // Draw user strokes
+            drawUserStrokes();
+        }
+
+        function drawGuideShape() {
+            const shapeData = SHAPE_DATA[gameState.category][gameState.currentItem];
+            if (!shapeData) return;
+
+            const lineWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--line-width'));
+
+            ctx.strokeStyle = '#E0E0E0';
+            ctx.lineWidth = lineWidth + 8;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.setLineDash([15, 10]);
+
+            for (const stroke of shapeData) {
+                if (stroke.length < 2) continue;
+                ctx.beginPath();
+                ctx.moveTo((stroke[0].x / 100) * canvasWidth, (stroke[0].y / 100) * canvasHeight);
+                for (let i = 1; i < stroke.length; i++) {
+                    ctx.lineTo((stroke[i].x / 100) * canvasWidth, (stroke[i].y / 100) * canvasHeight);
+                }
+                ctx.stroke();
+            }
+
+            ctx.setLineDash([]);
+        }
+
+        function drawUserStrokes() {
+            if (gameState.strokes.length === 0) return;
+
+            const lineWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--line-width'));
+
+            ctx.strokeStyle = settings.lineColor;
+            ctx.lineWidth = lineWidth;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            for (const stroke of gameState.strokes) {
+                if (stroke.length < 2) continue;
+                ctx.beginPath();
+                ctx.moveTo(stroke[0].x, stroke[0].y);
+                for (let i = 1; i < stroke.length; i++) {
+                    ctx.lineTo(stroke[i].x, stroke[i].y);
+                }
+                ctx.stroke();
+            }
+        }
 
         function loadItem(category, item) {
             gameState.category = category;
             gameState.currentItem = item;
-            gameState.currentDotIndex = 0;
-            gameState.lines = [];
-            gameState.isComplete = false;
-            gameState.isTracingMode = false;
-            gameState.traceLines = [];
+            gameState.strokes = [];
+            gameState.hasDrawn = false;
 
-            // Convert percentage dots to canvas coordinates
-            const dotData = DOT_DATA[category][item];
-            gameState.dots = dotData.map((d, i) => ({
-                x: (d.x / 100) * canvasWidth,
-                y: (d.y / 100) * canvasHeight,
-                index: i + 1,
-                connected: false
-            }));
-
-            updateProgress();
-            drawGame();
-            document.getElementById('modeIndicator').classList.remove('active');
-        }
-
-        function updateProgress() {
-            const total = gameState.dots.length;
-            const current = gameState.currentDotIndex;
-            document.getElementById('dotProgress').textContent = `${current}/${total}`;
-        }
-
-        function drawGame() {
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-            // Draw completed lines
-            if (gameState.lines.length > 0) {
-                ctx.strokeStyle = settings.lineColor;
-                ctx.lineWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--line-width'));
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-
-                ctx.beginPath();
-                ctx.moveTo(gameState.lines[0].x, gameState.lines[0].y);
-                for (let i = 1; i < gameState.lines.length; i++) {
-                    ctx.lineTo(gameState.lines[i].x, gameState.lines[i].y);
-                }
-                ctx.stroke();
-            }
-
-            // Draw trace lines (lighter)
-            if (gameState.traceLines.length > 0) {
-                ctx.strokeStyle = settings.lineColor + '80';
-                ctx.lineWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--line-width')) * 1.5;
-                ctx.lineCap = 'round';
-
-                for (const line of gameState.traceLines) {
-                    if (line.length > 1) {
-                        ctx.beginPath();
-                        ctx.moveTo(line[0].x, line[0].y);
-                        for (let i = 1; i < line.length; i++) {
-                            ctx.lineTo(line[i].x, line[i].y);
-                        }
-                        ctx.stroke();
-                    }
-                }
-            }
-
-            // Draw dots
-            const dotSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dot-size'));
-
-            gameState.dots.forEach((dot, i) => {
-                const isNext = i === gameState.currentDotIndex;
-                const isConnected = i < gameState.currentDotIndex;
-
-                // Dot circle
-                ctx.beginPath();
-                ctx.arc(dot.x, dot.y, dotSize / 2, 0, Math.PI * 2);
-
-                if (isConnected) {
-                    ctx.fillStyle = settings.lineColor;
-                } else if (isNext) {
-                    ctx.fillStyle = '#FBBF24';
-                } else {
-                    ctx.fillStyle = '#E5E7EB';
-                }
-                ctx.fill();
-
-                // Dot border
-                ctx.strokeStyle = isNext ? '#F59E0B' : '#9CA3AF';
-                ctx.lineWidth = isNext ? 4 : 2;
-                ctx.stroke();
-
-                // Dot number
-                ctx.fillStyle = isConnected ? 'white' : '#374151';
-                ctx.font = `bold ${dotSize * 0.45}px sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(dot.index, dot.x, dot.y);
-
-                // Pulse animation for next dot
-                if (isNext && !gameState.isComplete) {
-                    ctx.strokeStyle = '#FBBF2440';
-                    ctx.lineWidth = 3;
-                    const pulseSize = dotSize / 2 + 10 + Math.sin(Date.now() / 200) * 5;
-                    ctx.beginPath();
-                    ctx.arc(dot.x, dot.y, pulseSize, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
-            });
-
-            // Continue animation if needed
-            if (!gameState.isComplete) {
-                requestAnimationFrame(drawGame);
-            }
-        }
-
-        function handleDotTap(x, y) {
-            if (gameState.isComplete) return;
-            if (gameState.isTracingMode) return;
-
-            const nextDot = gameState.dots[gameState.currentDotIndex];
-            if (!nextDot) return;
-
-            const distance = Math.sqrt(Math.pow(x - nextDot.x, 2) + Math.pow(y - nextDot.y, 2));
-            const dotSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dot-size'));
-
-            if (distance < dotSize) {
-                // Correct dot tapped!
-                sounds.dot();
-
-                gameState.lines.push({ x: nextDot.x, y: nextDot.y });
-                gameState.currentDotIndex++;
-                updateProgress();
-
-                // Check if complete
-                if (gameState.currentDotIndex >= gameState.dots.length) {
-                    gameState.isComplete = true;
-                    sounds.complete();
-                    setTimeout(showCelebration, 500);
-                }
-            }
-        }
-
-        // ===========================================
-        // TRACING MODE
-        // ===========================================
-
-        function startTracingMode() {
-            gameState.isTracingMode = true;
-            gameState.traceLines = [];
-            document.getElementById('modeIndicator').classList.add('active');
+            document.getElementById('currentItem').textContent = item;
             document.getElementById('celebration').classList.remove('active');
-            drawGame();
-        }
 
-        function handleTraceStart(x, y) {
-            if (!gameState.isTracingMode) return;
-            gameState.isDrawing = true;
-            gameState.lastPoint = { x, y };
-            gameState.traceLines.push([{ x, y }]);
-        }
+            // Show hint briefly
+            const hint = document.getElementById('hintText');
+            hint.classList.add('visible');
+            setTimeout(() => hint.classList.remove('visible'), 2500);
 
-        function handleTraceMove(x, y) {
-            if (!gameState.isDrawing || !gameState.isTracingMode) return;
-
-            const currentLine = gameState.traceLines[gameState.traceLines.length - 1];
-            currentLine.push({ x, y });
-            gameState.lastPoint = { x, y };
-
-            // Draw immediately for responsiveness
-            ctx.strokeStyle = settings.lineColor + '80';
-            ctx.lineWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--line-width')) * 1.5;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            const prev = currentLine[currentLine.length - 2];
-            ctx.moveTo(prev.x, prev.y);
-            ctx.lineTo(x, y);
-            ctx.stroke();
-        }
-
-        function handleTraceEnd() {
-            gameState.isDrawing = false;
-            gameState.lastPoint = null;
+            drawCanvas();
         }
 
         // ===========================================
-        // EVENT HANDLERS
+        // TOUCH/MOUSE HANDLERS
         // ===========================================
 
         function getCanvasCoords(e) {
@@ -1067,106 +864,103 @@
             };
         }
 
-        function setupEventListeners() {
-            // Audio unlock
-            const unlockAudio = () => initAudio();
-            document.addEventListener('touchstart', unlockAudio, { once: true });
-            document.addEventListener('click', unlockAudio, { once: true });
+        function handleStart(e) {
+            e.preventDefault();
+            initAudio();
+            gameState.isDrawing = true;
+            const coords = getCanvasCoords(e);
+            gameState.strokes.push([coords]);
+            gameState.hasDrawn = true;
+        }
 
-            // Canvas events
-            canvas.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                const coords = getCanvasCoords(e);
-                if (gameState.isTracingMode) {
-                    handleTraceStart(coords.x, coords.y);
-                } else {
-                    handleDotTap(coords.x, coords.y);
-                }
-            });
+        function handleMove(e) {
+            if (!gameState.isDrawing) return;
+            e.preventDefault();
 
-            canvas.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                const coords = getCanvasCoords(e);
-                handleTraceMove(coords.x, coords.y);
-            });
+            const coords = getCanvasCoords(e);
+            const currentStroke = gameState.strokes[gameState.strokes.length - 1];
+            const lastPoint = currentStroke[currentStroke.length - 1];
 
-            canvas.addEventListener('touchend', handleTraceEnd);
+            // Only add point if moved enough
+            const dist = Math.sqrt(Math.pow(coords.x - lastPoint.x, 2) + Math.pow(coords.y - lastPoint.y, 2));
+            if (dist > 3) {
+                currentStroke.push(coords);
+                sounds.draw();
 
-            canvas.addEventListener('mousedown', (e) => {
-                const coords = getCanvasCoords(e);
-                if (gameState.isTracingMode) {
-                    handleTraceStart(coords.x, coords.y);
-                } else {
-                    handleDotTap(coords.x, coords.y);
-                }
-            });
+                // Draw immediately for responsiveness
+                const lineWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--line-width'));
+                ctx.strokeStyle = settings.lineColor;
+                ctx.lineWidth = lineWidth;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(lastPoint.x, lastPoint.y);
+                ctx.lineTo(coords.x, coords.y);
+                ctx.stroke();
+            }
+        }
 
-            canvas.addEventListener('mousemove', (e) => {
-                const coords = getCanvasCoords(e);
-                handleTraceMove(coords.x, coords.y);
-            });
+        function handleEnd() {
+            if (!gameState.isDrawing) return;
+            gameState.isDrawing = false;
 
-            canvas.addEventListener('mouseup', handleTraceEnd);
-            canvas.addEventListener('mouseleave', handleTraceEnd);
+            // Check if drawing is "complete enough"
+            const totalPoints = gameState.strokes.reduce((sum, s) => sum + s.length, 0);
+            if (totalPoints > 30 && gameState.hasDrawn) {
+                // Simple completion check - drawn enough
+                setTimeout(() => {
+                    sounds.complete();
+                    showCelebration();
+                }, 300);
+            }
+        }
 
-            // Header buttons
-            document.getElementById('resetBtn').addEventListener('click', () => {
-                loadItem(gameState.category, gameState.currentItem);
-            });
+        // ===========================================
+        // UI
+        // ===========================================
 
-            document.getElementById('menuBtn').addEventListener('click', () => {
-                document.getElementById('categoryOverlay').classList.add('active');
-            });
+        function showCelebration() {
+            createConfetti();
+            document.getElementById('celebrationShape').textContent = gameState.currentItem;
+            document.getElementById('celebration').classList.add('active');
+        }
 
-            document.getElementById('soundBtn').addEventListener('click', () => {
-                initAudio();
-                settings.soundEnabled = !settings.soundEnabled;
-                document.getElementById('soundBtn').textContent = settings.soundEnabled ? '🔊' : '🔇';
-            });
+        function createConfetti() {
+            const colors = ['#FF6B9D', '#A855F7', '#3B82F6', '#10B981', '#FBBF24', '#F97316'];
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
 
-            // Color picker
-            document.querySelectorAll('.color-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    settings.lineColor = btn.dataset.color;
-                });
-            });
+        function goNext() {
+            const items = Object.keys(SHAPE_DATA[gameState.category]);
+            const idx = items.indexOf(gameState.currentItem);
+            const nextIdx = (idx + 1) % items.length;
+            loadItem(gameState.category, items[nextIdx]);
+        }
 
-            // Category panel
-            document.getElementById('categoryOverlay').addEventListener('click', (e) => {
-                if (e.target === document.getElementById('categoryOverlay')) {
-                    document.getElementById('categoryOverlay').classList.remove('active');
-                }
-            });
+        function goPrev() {
+            const items = Object.keys(SHAPE_DATA[gameState.category]);
+            const idx = items.indexOf(gameState.currentItem);
+            const prevIdx = (idx - 1 + items.length) % items.length;
+            loadItem(gameState.category, items[prevIdx]);
+        }
 
-            document.querySelectorAll('.category-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    gameState.category = btn.dataset.category;
-                    updateItemGrid();
-                });
-            });
-
-            document.getElementById('startBtn').addEventListener('click', () => {
-                document.getElementById('categoryOverlay').classList.remove('active');
-                loadItem(gameState.category, gameState.currentItem);
-            });
-
-            // Celebration buttons
-            document.getElementById('traceBtn').addEventListener('click', startTracingMode);
-
-            document.getElementById('nextBtn').addEventListener('click', () => {
-                document.getElementById('celebration').classList.remove('active');
-                goToNext();
-            });
+        function clearDrawing() {
+            gameState.strokes = [];
+            gameState.hasDrawn = false;
+            drawCanvas();
         }
 
         function updateItemGrid() {
             const grid = document.getElementById('itemGrid');
             const label = document.getElementById('itemLabel');
-            const items = Object.keys(DOT_DATA[gameState.category]);
+            const items = Object.keys(SHAPE_DATA[gameState.category]);
 
             label.textContent = gameState.category === 'letters' ? 'Pick a Letter' :
                                gameState.category === 'numbers' ? 'Pick a Number' : 'Pick a Shape';
@@ -1186,45 +980,92 @@
             });
         }
 
-        function showCelebration() {
-            sounds.win();
-            createConfetti();
-            document.getElementById('celebrationShape').textContent = gameState.currentItem;
-            document.getElementById('celebration').classList.add('active');
-        }
+        // ===========================================
+        // EVENT LISTENERS
+        // ===========================================
 
-        function createConfetti() {
-            const colors = ['#FF6B9D', '#A855F7', '#3B82F6', '#10B981', '#FBBF24', '#F97316'];
-            for (let i = 0; i < 40; i++) {
-                const confetti = document.createElement('div');
-                confetti.className = 'confetti';
-                confetti.style.left = Math.random() * 100 + 'vw';
-                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.animationDelay = Math.random() * 2 + 's';
-                document.body.appendChild(confetti);
-                setTimeout(() => confetti.remove(), 5000);
-            }
-        }
+        function setupEventListeners() {
+            // Audio unlock
+            document.addEventListener('touchstart', () => initAudio(), { once: true });
+            document.addEventListener('click', () => initAudio(), { once: true });
 
-        function goToNext() {
-            const items = Object.keys(DOT_DATA[gameState.category]);
-            const currentIndex = items.indexOf(gameState.currentItem);
-            const nextIndex = (currentIndex + 1) % items.length;
-            gameState.currentItem = items[nextIndex];
-            loadItem(gameState.category, gameState.currentItem);
+            // Canvas events
+            canvas.addEventListener('touchstart', handleStart);
+            canvas.addEventListener('touchmove', handleMove);
+            canvas.addEventListener('touchend', handleEnd);
+            canvas.addEventListener('mousedown', handleStart);
+            canvas.addEventListener('mousemove', handleMove);
+            canvas.addEventListener('mouseup', handleEnd);
+            canvas.addEventListener('mouseleave', handleEnd);
+
+            // Buttons
+            document.getElementById('clearBtn').addEventListener('click', clearDrawing);
+            document.getElementById('soundBtn').addEventListener('click', () => {
+                initAudio();
+                settings.soundEnabled = !settings.soundEnabled;
+                document.getElementById('soundBtn').textContent = settings.soundEnabled ? '🔊' : '🔇';
+            });
+
+            document.getElementById('menuBtn').addEventListener('click', () => {
+                document.getElementById('categoryOverlay').classList.add('active');
+                updateItemGrid();
+            });
+
+            document.getElementById('closeMenuBtn').addEventListener('click', () => {
+                document.getElementById('categoryOverlay').classList.remove('active');
+                loadItem(gameState.category, gameState.currentItem);
+            });
+
+            document.getElementById('categoryOverlay').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('categoryOverlay')) {
+                    document.getElementById('categoryOverlay').classList.remove('active');
+                }
+            });
+
+            // Category buttons
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    gameState.category = btn.dataset.category;
+                    gameState.currentItem = Object.keys(SHAPE_DATA[gameState.category])[0];
+                    updateItemGrid();
+                });
+            });
+
+            // Color picker
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    settings.lineColor = btn.dataset.color;
+                });
+            });
+
+            // Navigation
+            document.getElementById('nextBtn').addEventListener('click', goNext);
+            document.getElementById('prevBtn').addEventListener('click', goPrev);
+
+            // Celebration buttons
+            document.getElementById('againBtn').addEventListener('click', () => {
+                document.getElementById('celebration').classList.remove('active');
+                clearDrawing();
+            });
+            document.getElementById('nextItemBtn').addEventListener('click', () => {
+                document.getElementById('celebration').classList.remove('active');
+                goNext();
+            });
         }
 
         // ===========================================
-        // INITIALIZATION
+        // INIT
         // ===========================================
 
         document.addEventListener('DOMContentLoaded', () => {
             setupCanvas();
             setupEventListeners();
-            updateItemGrid();
             loadItem('letters', 'A');
 
-            // Register service worker
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js').catch(() => {});
             }
