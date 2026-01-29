@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#3B82F6">
+    <title>Dot to Dot - Connect & Trace!</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+
+    <style>
+        /* ===========================================
+           CONNECT THE DOTS GAME - Bimmi Boo Style
+           =========================================== */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        :root {
+            --color-blue: #3B82F6;
+            --color-purple: #A855F7;
+            --color-pink: #EC4899;
+            --color-green: #10B981;
+            --color-yellow: #FBBF24;
+            --color-orange: #F97316;
+            --color-red: #EF4444;
+            --color-cyan: #06B6D4;
+
+            --bg-start: #3B82F6;
+            --bg-end: #A855F7;
+
+            --dot-size: 60px;
+            --line-width: 8px;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===========================================
+           HEADER
+           =========================================== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            padding-top: max(15px, env(safe-area-inset-top));
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+        }
+
+        .progress-display {
+            background: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--color-purple);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            min-width: 55px;
+            min-height: 55px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.6rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: scale(0.9);
+        }
+
+        .btn-white {
+            background: white;
+            color: var(--color-blue);
+        }
+
+        .btn-colored {
+            background: linear-gradient(135deg, var(--color-green) 0%, var(--color-cyan) 100%);
+            color: white;
+        }
+
+        /* ===========================================
+           CANVAS AREA
+           =========================================== */
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        #gameCanvas {
+            display: block;
+            touch-action: none;
+        }
+
+        /* ===========================================
+           COLOR PICKER
+           =========================================== */
+        .color-picker {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 50px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+        }
+
+        .color-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+
+        .color-btn:active {
+            transform: scale(0.9);
+        }
+
+        .color-btn.active {
+            border-color: #1F2937;
+            transform: scale(1.15);
+        }
+
+        /* ===========================================
+           CATEGORY SELECTOR (Bottom Sheet)
+           =========================================== */
+        .category-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .category-overlay.active {
+            display: flex;
+        }
+
+        .category-panel {
+            background: white;
+            border-radius: 30px 30px 0 0;
+            padding: 30px;
+            padding-bottom: max(30px, env(safe-area-inset-bottom));
+            width: 100%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .category-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #1F2937;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .category-group {
+            margin-bottom: 25px;
+        }
+
+        .category-label {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #6B7280;
+            margin-bottom: 12px;
+        }
+
+        .category-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .category-btn {
+            padding: 15px 25px;
+            border: 3px solid #E5E7EB;
+            border-radius: 16px;
+            background: white;
+            font-size: 1.3rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .category-btn:active {
+            transform: scale(0.95);
+        }
+
+        .category-btn.active {
+            border-color: var(--color-blue);
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            color: var(--color-blue);
+        }
+
+        .item-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .item-btn {
+            aspect-ratio: 1;
+            border: 3px solid #E5E7EB;
+            border-radius: 16px;
+            background: white;
+            font-size: 2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-btn:active {
+            transform: scale(0.95);
+        }
+
+        .item-btn.active {
+            border-color: var(--color-blue);
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            color: var(--color-blue);
+        }
+
+        .item-btn.completed {
+            border-color: var(--color-green);
+            background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+        }
+
+        .item-btn.completed::after {
+            content: '✓';
+            font-size: 0.8rem;
+            position: absolute;
+            bottom: 2px;
+            right: 5px;
+            color: var(--color-green);
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 20px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--color-green) 0%, var(--color-cyan) 100%);
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .start-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* ===========================================
+           CELEBRATION OVERLAY
+           =========================================== */
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 200;
+        }
+
+        .celebration.active {
+            display: flex;
+        }
+
+        .celebration-content {
+            text-align: center;
+            animation: celebrate 0.5s ease forwards;
+        }
+
+        .celebration-shape {
+            font-size: 10rem;
+            animation: float 1s ease-in-out infinite;
+        }
+
+        .celebration-text {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: white;
+            margin: 20px 0;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+        }
+
+        .celebration-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .celebration .btn {
+            padding: 18px 35px;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        /* ===========================================
+           TRACING MODE INDICATOR
+           =========================================== */
+        .mode-indicator {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: 700;
+            color: var(--color-purple);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .mode-indicator.active {
+            display: block;
+        }
+
+        /* ===========================================
+           ANIMATIONS
+           =========================================== */
+        @keyframes celebrate {
+            0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+            50% { transform: scale(1.1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        @keyframes dotComplete {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: confetti 3s ease-out forwards;
+            pointer-events: none;
+            z-index: 201;
+        }
+
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* ===========================================
+           RESPONSIVE
+           =========================================== */
+        @media (max-width: 500px) {
+            :root {
+                --dot-size: 50px;
+                --line-width: 6px;
+            }
+
+            .title { font-size: 1.2rem; }
+            .color-btn { width: 38px; height: 38px; }
+            .color-picker { gap: 8px; padding: 10px 15px; }
+        }
+
+        @media (min-width: 768px) {
+            :root {
+                --dot-size: 70px;
+                --line-width: 10px;
+            }
+
+            .celebration-shape { font-size: 14rem; }
+        }
+
+        /* Landscape adjustments */
+        @media (orientation: landscape) and (max-height: 500px) {
+            :root {
+                --dot-size: 45px;
+                --line-width: 5px;
+            }
+            .header { padding: 8px 15px; }
+            .color-picker { bottom: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <a href="../" class="btn btn-white" aria-label="Home">🏠</a>
+        <h1 class="title">Dot to Dot</h1>
+        <div class="progress-display">
+            <span id="dotProgress">0/0</span>
+        </div>
+        <div class="header-buttons">
+            <button class="btn btn-white" id="soundBtn">🔊</button>
+            <button class="btn btn-white" id="menuBtn">📋</button>
+            <button class="btn btn-colored" id="resetBtn">🔄</button>
+        </div>
+    </header>
+
+    <!-- CANVAS -->
+    <div class="canvas-container">
+        <div class="canvas-wrapper">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+
+        <div class="mode-indicator" id="modeIndicator">✏️ Trace Mode - Draw over the shape!</div>
+
+        <div class="color-picker" id="colorPicker">
+            <button class="color-btn active" data-color="#EF4444" style="background: #EF4444;"></button>
+            <button class="color-btn" data-color="#F97316" style="background: #F97316;"></button>
+            <button class="color-btn" data-color="#FBBF24" style="background: #FBBF24;"></button>
+            <button class="color-btn" data-color="#10B981" style="background: #10B981;"></button>
+            <button class="color-btn" data-color="#3B82F6" style="background: #3B82F6;"></button>
+            <button class="color-btn" data-color="#A855F7" style="background: #A855F7;"></button>
+            <button class="color-btn" data-color="#EC4899" style="background: #EC4899;"></button>
+        </div>
+    </div>
+
+    <!-- CATEGORY SELECTOR -->
+    <div class="category-overlay" id="categoryOverlay">
+        <div class="category-panel">
+            <h2 class="category-title">✏️ Choose What to Draw</h2>
+
+            <div class="category-group">
+                <div class="category-label">Category</div>
+                <div class="category-buttons">
+                    <button class="category-btn active" data-category="letters">ABC Letters</button>
+                    <button class="category-btn" data-category="numbers">123 Numbers</button>
+                    <button class="category-btn" data-category="shapes">★ Shapes</button>
+                </div>
+            </div>
+
+            <div class="category-group">
+                <div class="category-label" id="itemLabel">Pick a Letter</div>
+                <div class="item-grid" id="itemGrid">
+                    <!-- Generated by JS -->
+                </div>
+            </div>
+
+            <button class="start-btn" id="startBtn">Let's Draw! ✏️</button>
+        </div>
+    </div>
+
+    <!-- CELEBRATION -->
+    <div class="celebration" id="celebration">
+        <div class="celebration-content">
+            <div class="celebration-shape" id="celebrationShape">A</div>
+            <div class="celebration-text">Amazing! 🌟</div>
+            <div class="celebration-buttons">
+                <button class="btn btn-white" id="traceBtn">✏️ Trace It</button>
+                <button class="btn btn-colored" id="nextBtn">Next ➡️</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ===========================================
+           DOT TO DOT GAME - Connect & Trace
+           =========================================== */
+
+        // ===========================================
+        // DOT DATA - Coordinates for each shape
+        // Dots are defined as percentages of canvas size
+        // ===========================================
+
+        const DOT_DATA = {
+            letters: {
+                'A': [
+                    {x: 50, y: 90}, {x: 30, y: 50}, {x: 50, y: 10},
+                    {x: 70, y: 50}, {x: 50, y: 90}, {x: 35, y: 65}, {x: 65, y: 65}
+                ],
+                'B': [
+                    {x: 30, y: 90}, {x: 30, y: 10}, {x: 60, y: 10},
+                    {x: 70, y: 25}, {x: 60, y: 50}, {x: 30, y: 50},
+                    {x: 65, y: 50}, {x: 75, y: 70}, {x: 60, y: 90}, {x: 30, y: 90}
+                ],
+                'C': [
+                    {x: 70, y: 25}, {x: 50, y: 10}, {x: 30, y: 25},
+                    {x: 25, y: 50}, {x: 30, y: 75}, {x: 50, y: 90}, {x: 70, y: 75}
+                ],
+                'D': [
+                    {x: 30, y: 90}, {x: 30, y: 10}, {x: 55, y: 10},
+                    {x: 75, y: 30}, {x: 75, y: 70}, {x: 55, y: 90}, {x: 30, y: 90}
+                ],
+                'E': [
+                    {x: 70, y: 10}, {x: 30, y: 10}, {x: 30, y: 50},
+                    {x: 60, y: 50}, {x: 30, y: 50}, {x: 30, y: 90}, {x: 70, y: 90}
+                ],
+                'F': [
+                    {x: 70, y: 10}, {x: 30, y: 10}, {x: 30, y: 50},
+                    {x: 55, y: 50}, {x: 30, y: 50}, {x: 30, y: 90}
+                ],
+                'G': [
+                    {x: 70, y: 25}, {x: 50, y: 10}, {x: 30, y: 25},
+                    {x: 25, y: 50}, {x: 30, y: 75}, {x: 50, y: 90},
+                    {x: 70, y: 75}, {x: 70, y: 50}, {x: 50, y: 50}
+                ],
+                'H': [
+                    {x: 30, y: 10}, {x: 30, y: 90}, {x: 30, y: 50},
+                    {x: 70, y: 50}, {x: 70, y: 10}, {x: 70, y: 90}
+                ],
+                'I': [
+                    {x: 35, y: 10}, {x: 65, y: 10}, {x: 50, y: 10},
+                    {x: 50, y: 90}, {x: 35, y: 90}, {x: 65, y: 90}
+                ],
+                'J': [
+                    {x: 40, y: 10}, {x: 70, y: 10}, {x: 70, y: 70},
+                    {x: 55, y: 90}, {x: 35, y: 90}, {x: 25, y: 70}
+                ],
+                'K': [
+                    {x: 30, y: 10}, {x: 30, y: 90}, {x: 30, y: 55},
+                    {x: 70, y: 10}, {x: 30, y: 55}, {x: 70, y: 90}
+                ],
+                'L': [
+                    {x: 30, y: 10}, {x: 30, y: 90}, {x: 70, y: 90}
+                ],
+                'M': [
+                    {x: 20, y: 90}, {x: 20, y: 10}, {x: 50, y: 50},
+                    {x: 80, y: 10}, {x: 80, y: 90}
+                ],
+                'N': [
+                    {x: 25, y: 90}, {x: 25, y: 10}, {x: 75, y: 90}, {x: 75, y: 10}
+                ],
+                'O': [
+                    {x: 50, y: 10}, {x: 30, y: 25}, {x: 25, y: 50},
+                    {x: 30, y: 75}, {x: 50, y: 90}, {x: 70, y: 75},
+                    {x: 75, y: 50}, {x: 70, y: 25}, {x: 50, y: 10}
+                ],
+                'P': [
+                    {x: 30, y: 90}, {x: 30, y: 10}, {x: 60, y: 10},
+                    {x: 75, y: 25}, {x: 75, y: 40}, {x: 60, y: 55}, {x: 30, y: 55}
+                ],
+                'Q': [
+                    {x: 50, y: 10}, {x: 30, y: 25}, {x: 25, y: 50},
+                    {x: 30, y: 75}, {x: 50, y: 90}, {x: 70, y: 75},
+                    {x: 75, y: 50}, {x: 70, y: 25}, {x: 50, y: 10},
+                    {x: 55, y: 70}, {x: 75, y: 95}
+                ],
+                'R': [
+                    {x: 30, y: 90}, {x: 30, y: 10}, {x: 60, y: 10},
+                    {x: 70, y: 25}, {x: 60, y: 50}, {x: 30, y: 50}, {x: 70, y: 90}
+                ],
+                'S': [
+                    {x: 70, y: 20}, {x: 55, y: 10}, {x: 40, y: 15},
+                    {x: 30, y: 30}, {x: 40, y: 45}, {x: 60, y: 55},
+                    {x: 70, y: 70}, {x: 60, y: 85}, {x: 45, y: 90}, {x: 30, y: 80}
+                ],
+                'T': [
+                    {x: 20, y: 10}, {x: 80, y: 10}, {x: 50, y: 10}, {x: 50, y: 90}
+                ],
+                'U': [
+                    {x: 25, y: 10}, {x: 25, y: 70}, {x: 40, y: 90},
+                    {x: 60, y: 90}, {x: 75, y: 70}, {x: 75, y: 10}
+                ],
+                'V': [
+                    {x: 20, y: 10}, {x: 50, y: 90}, {x: 80, y: 10}
+                ],
+                'W': [
+                    {x: 10, y: 10}, {x: 30, y: 90}, {x: 50, y: 50},
+                    {x: 70, y: 90}, {x: 90, y: 10}
+                ],
+                'X': [
+                    {x: 25, y: 10}, {x: 75, y: 90}, {x: 50, y: 50},
+                    {x: 75, y: 10}, {x: 25, y: 90}
+                ],
+                'Y': [
+                    {x: 20, y: 10}, {x: 50, y: 50}, {x: 80, y: 10},
+                    {x: 50, y: 50}, {x: 50, y: 90}
+                ],
+                'Z': [
+                    {x: 25, y: 10}, {x: 75, y: 10}, {x: 25, y: 90}, {x: 75, y: 90}
+                ]
+            },
+            numbers: {
+                '0': [
+                    {x: 50, y: 10}, {x: 30, y: 25}, {x: 25, y: 50},
+                    {x: 30, y: 75}, {x: 50, y: 90}, {x: 70, y: 75},
+                    {x: 75, y: 50}, {x: 70, y: 25}, {x: 50, y: 10}
+                ],
+                '1': [
+                    {x: 35, y: 25}, {x: 50, y: 10}, {x: 50, y: 90},
+                    {x: 35, y: 90}, {x: 65, y: 90}
+                ],
+                '2': [
+                    {x: 30, y: 25}, {x: 45, y: 10}, {x: 65, y: 15},
+                    {x: 70, y: 30}, {x: 30, y: 90}, {x: 70, y: 90}
+                ],
+                '3': [
+                    {x: 30, y: 20}, {x: 50, y: 10}, {x: 70, y: 25},
+                    {x: 55, y: 45}, {x: 70, y: 65}, {x: 55, y: 85},
+                    {x: 35, y: 90}, {x: 25, y: 80}
+                ],
+                '4': [
+                    {x: 60, y: 90}, {x: 60, y: 10}, {x: 25, y: 65}, {x: 75, y: 65}
+                ],
+                '5': [
+                    {x: 70, y: 10}, {x: 30, y: 10}, {x: 30, y: 45},
+                    {x: 55, y: 40}, {x: 70, y: 55}, {x: 70, y: 70},
+                    {x: 55, y: 90}, {x: 30, y: 85}
+                ],
+                '6': [
+                    {x: 65, y: 15}, {x: 45, y: 10}, {x: 30, y: 30},
+                    {x: 25, y: 60}, {x: 35, y: 85}, {x: 55, y: 90},
+                    {x: 70, y: 75}, {x: 65, y: 55}, {x: 45, y: 50}, {x: 30, y: 60}
+                ],
+                '7': [
+                    {x: 25, y: 10}, {x: 75, y: 10}, {x: 45, y: 90}
+                ],
+                '8': [
+                    {x: 50, y: 50}, {x: 35, y: 35}, {x: 40, y: 15},
+                    {x: 60, y: 15}, {x: 65, y: 35}, {x: 50, y: 50},
+                    {x: 30, y: 70}, {x: 40, y: 90}, {x: 60, y: 90},
+                    {x: 70, y: 70}, {x: 50, y: 50}
+                ],
+                '9': [
+                    {x: 65, y: 40}, {x: 55, y: 20}, {x: 40, y: 15},
+                    {x: 30, y: 30}, {x: 35, y: 45}, {x: 55, y: 50},
+                    {x: 70, y: 40}, {x: 70, y: 70}, {x: 55, y: 90}, {x: 35, y: 85}
+                ]
+            },
+            shapes: {
+                '⭐': [ // Star
+                    {x: 50, y: 5}, {x: 40, y: 35}, {x: 10, y: 35},
+                    {x: 35, y: 55}, {x: 25, y: 90}, {x: 50, y: 70},
+                    {x: 75, y: 90}, {x: 65, y: 55}, {x: 90, y: 35},
+                    {x: 60, y: 35}, {x: 50, y: 5}
+                ],
+                '❤️': [ // Heart
+                    {x: 50, y: 90}, {x: 15, y: 55}, {x: 10, y: 35},
+                    {x: 20, y: 20}, {x: 35, y: 15}, {x: 50, y: 30},
+                    {x: 65, y: 15}, {x: 80, y: 20}, {x: 90, y: 35},
+                    {x: 85, y: 55}, {x: 50, y: 90}
+                ],
+                '🏠': [ // House
+                    {x: 20, y: 50}, {x: 50, y: 15}, {x: 80, y: 50},
+                    {x: 80, y: 90}, {x: 20, y: 90}, {x: 20, y: 50},
+                    {x: 40, y: 90}, {x: 40, y: 65}, {x: 60, y: 65}, {x: 60, y: 90}
+                ],
+                '🌙': [ // Moon
+                    {x: 70, y: 15}, {x: 50, y: 10}, {x: 30, y: 20},
+                    {x: 20, y: 40}, {x: 20, y: 60}, {x: 30, y: 80},
+                    {x: 50, y: 90}, {x: 70, y: 85}, {x: 55, y: 70},
+                    {x: 50, y: 50}, {x: 55, y: 30}, {x: 70, y: 15}
+                ],
+                '🔷': [ // Diamond
+                    {x: 50, y: 5}, {x: 85, y: 50}, {x: 50, y: 95}, {x: 15, y: 50}, {x: 50, y: 5}
+                ],
+                '🌲': [ // Tree
+                    {x: 50, y: 5}, {x: 25, y: 40}, {x: 35, y: 40},
+                    {x: 20, y: 65}, {x: 35, y: 65}, {x: 35, y: 95},
+                    {x: 65, y: 95}, {x: 65, y: 65}, {x: 80, y: 65},
+                    {x: 65, y: 40}, {x: 75, y: 40}, {x: 50, y: 5}
+                ]
+            }
+        };
+
+        // ===========================================
+        // GAME STATE
+        // ===========================================
+
+        let gameState = {
+            category: 'letters',
+            currentItem: 'A',
+            dots: [],
+            currentDotIndex: 0,
+            lines: [],
+            isComplete: false,
+            isTracingMode: false,
+            traceLines: [],
+            isDrawing: false,
+            lastPoint: null
+        };
+
+        let settings = {
+            lineColor: '#EF4444',
+            soundEnabled: true
+        };
+
+        // Canvas references
+        let canvas, ctx;
+        let canvasWidth = 400;
+        let canvasHeight = 500;
+
+        // ===========================================
+        // AUDIO SYSTEM (Same as matching game)
+        // ===========================================
+
+        let audioContext = null;
+        let audioUnlocked = false;
+
+        async function initAudio() {
+            if (!audioContext) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) { return; }
+            }
+            if (audioContext.state === 'suspended') {
+                try { await audioContext.resume(); } catch (e) {}
+            }
+            if (!audioUnlocked && audioContext.state === 'running') {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                gain.gain.value = 0.001;
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.001);
+                audioUnlocked = true;
+            }
+        }
+
+        function playTone(freq, dur, type = 'sine') {
+            if (!settings.soundEnabled || !audioContext || audioContext.state !== 'running') return;
+            try {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.value = freq;
+                osc.type = type;
+                gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + dur);
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + dur);
+            } catch (e) {}
+        }
+
+        const sounds = {
+            dot: () => playTone(523 + gameState.currentDotIndex * 50, 0.1),
+            complete: () => {
+                playTone(523, 0.15);
+                setTimeout(() => playTone(659, 0.15), 100);
+                setTimeout(() => playTone(784, 0.2), 200);
+            },
+            trace: () => playTone(330, 0.05),
+            win: () => {
+                [523, 659, 784, 1047].forEach((f, i) => {
+                    setTimeout(() => playTone(f, 0.2), i * 150);
+                });
+            }
+        };
+
+        // ===========================================
+        // CANVAS SETUP
+        // ===========================================
+
+        function setupCanvas() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        }
+
+        function resizeCanvas() {
+            const container = document.querySelector('.canvas-container');
+            const maxWidth = container.clientWidth - 40;
+            const maxHeight = container.clientHeight - 120;
+
+            // Maintain aspect ratio
+            const ratio = 4 / 5;
+            if (maxWidth / maxHeight > ratio) {
+                canvasHeight = Math.min(maxHeight, 600);
+                canvasWidth = canvasHeight * ratio;
+            } else {
+                canvasWidth = Math.min(maxWidth, 480);
+                canvasHeight = canvasWidth / ratio;
+            }
+
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            canvas.style.width = canvasWidth + 'px';
+            canvas.style.height = canvasHeight + 'px';
+
+            drawGame();
+        }
+
+        // ===========================================
+        // GAME LOGIC
+        // ===========================================
+
+        function loadItem(category, item) {
+            gameState.category = category;
+            gameState.currentItem = item;
+            gameState.currentDotIndex = 0;
+            gameState.lines = [];
+            gameState.isComplete = false;
+            gameState.isTracingMode = false;
+            gameState.traceLines = [];
+
+            // Convert percentage dots to canvas coordinates
+            const dotData = DOT_DATA[category][item];
+            gameState.dots = dotData.map((d, i) => ({
+                x: (d.x / 100) * canvasWidth,
+                y: (d.y / 100) * canvasHeight,
+                index: i + 1,
+                connected: false
+            }));
+
+            updateProgress();
+            drawGame();
+            document.getElementById('modeIndicator').classList.remove('active');
+        }
+
+        function updateProgress() {
+            const total = gameState.dots.length;
+            const current = gameState.currentDotIndex;
+            document.getElementById('dotProgress').textContent = `${current}/${total}`;
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            // Draw completed lines
+            if (gameState.lines.length > 0) {
+                ctx.strokeStyle = settings.lineColor;
+                ctx.lineWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--line-width'));
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(gameState.lines[0].x, gameState.lines[0].y);
+                for (let i = 1; i < gameState.lines.length; i++) {
+                    ctx.lineTo(gameState.lines[i].x, gameState.lines[i].y);
+                }
+                ctx.stroke();
+            }
+
+            // Draw trace lines (lighter)
+            if (gameState.traceLines.length > 0) {
+                ctx.strokeStyle = settings.lineColor + '80';
+                ctx.lineWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--line-width')) * 1.5;
+                ctx.lineCap = 'round';
+
+                for (const line of gameState.traceLines) {
+                    if (line.length > 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(line[0].x, line[0].y);
+                        for (let i = 1; i < line.length; i++) {
+                            ctx.lineTo(line[i].x, line[i].y);
+                        }
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw dots
+            const dotSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dot-size'));
+
+            gameState.dots.forEach((dot, i) => {
+                const isNext = i === gameState.currentDotIndex;
+                const isConnected = i < gameState.currentDotIndex;
+
+                // Dot circle
+                ctx.beginPath();
+                ctx.arc(dot.x, dot.y, dotSize / 2, 0, Math.PI * 2);
+
+                if (isConnected) {
+                    ctx.fillStyle = settings.lineColor;
+                } else if (isNext) {
+                    ctx.fillStyle = '#FBBF24';
+                } else {
+                    ctx.fillStyle = '#E5E7EB';
+                }
+                ctx.fill();
+
+                // Dot border
+                ctx.strokeStyle = isNext ? '#F59E0B' : '#9CA3AF';
+                ctx.lineWidth = isNext ? 4 : 2;
+                ctx.stroke();
+
+                // Dot number
+                ctx.fillStyle = isConnected ? 'white' : '#374151';
+                ctx.font = `bold ${dotSize * 0.45}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(dot.index, dot.x, dot.y);
+
+                // Pulse animation for next dot
+                if (isNext && !gameState.isComplete) {
+                    ctx.strokeStyle = '#FBBF2440';
+                    ctx.lineWidth = 3;
+                    const pulseSize = dotSize / 2 + 10 + Math.sin(Date.now() / 200) * 5;
+                    ctx.beginPath();
+                    ctx.arc(dot.x, dot.y, pulseSize, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            });
+
+            // Continue animation if needed
+            if (!gameState.isComplete) {
+                requestAnimationFrame(drawGame);
+            }
+        }
+
+        function handleDotTap(x, y) {
+            if (gameState.isComplete) return;
+            if (gameState.isTracingMode) return;
+
+            const nextDot = gameState.dots[gameState.currentDotIndex];
+            if (!nextDot) return;
+
+            const distance = Math.sqrt(Math.pow(x - nextDot.x, 2) + Math.pow(y - nextDot.y, 2));
+            const dotSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dot-size'));
+
+            if (distance < dotSize) {
+                // Correct dot tapped!
+                sounds.dot();
+
+                gameState.lines.push({ x: nextDot.x, y: nextDot.y });
+                gameState.currentDotIndex++;
+                updateProgress();
+
+                // Check if complete
+                if (gameState.currentDotIndex >= gameState.dots.length) {
+                    gameState.isComplete = true;
+                    sounds.complete();
+                    setTimeout(showCelebration, 500);
+                }
+            }
+        }
+
+        // ===========================================
+        // TRACING MODE
+        // ===========================================
+
+        function startTracingMode() {
+            gameState.isTracingMode = true;
+            gameState.traceLines = [];
+            document.getElementById('modeIndicator').classList.add('active');
+            document.getElementById('celebration').classList.remove('active');
+            drawGame();
+        }
+
+        function handleTraceStart(x, y) {
+            if (!gameState.isTracingMode) return;
+            gameState.isDrawing = true;
+            gameState.lastPoint = { x, y };
+            gameState.traceLines.push([{ x, y }]);
+        }
+
+        function handleTraceMove(x, y) {
+            if (!gameState.isDrawing || !gameState.isTracingMode) return;
+
+            const currentLine = gameState.traceLines[gameState.traceLines.length - 1];
+            currentLine.push({ x, y });
+            gameState.lastPoint = { x, y };
+
+            // Draw immediately for responsiveness
+            ctx.strokeStyle = settings.lineColor + '80';
+            ctx.lineWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--line-width')) * 1.5;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            const prev = currentLine[currentLine.length - 2];
+            ctx.moveTo(prev.x, prev.y);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+
+        function handleTraceEnd() {
+            gameState.isDrawing = false;
+            gameState.lastPoint = null;
+        }
+
+        // ===========================================
+        // EVENT HANDLERS
+        // ===========================================
+
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            if (e.touches) {
+                return {
+                    x: (e.touches[0].clientX - rect.left) * scaleX,
+                    y: (e.touches[0].clientY - rect.top) * scaleY
+                };
+            }
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        function setupEventListeners() {
+            // Audio unlock
+            const unlockAudio = () => initAudio();
+            document.addEventListener('touchstart', unlockAudio, { once: true });
+            document.addEventListener('click', unlockAudio, { once: true });
+
+            // Canvas events
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const coords = getCanvasCoords(e);
+                if (gameState.isTracingMode) {
+                    handleTraceStart(coords.x, coords.y);
+                } else {
+                    handleDotTap(coords.x, coords.y);
+                }
+            });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const coords = getCanvasCoords(e);
+                handleTraceMove(coords.x, coords.y);
+            });
+
+            canvas.addEventListener('touchend', handleTraceEnd);
+
+            canvas.addEventListener('mousedown', (e) => {
+                const coords = getCanvasCoords(e);
+                if (gameState.isTracingMode) {
+                    handleTraceStart(coords.x, coords.y);
+                } else {
+                    handleDotTap(coords.x, coords.y);
+                }
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                const coords = getCanvasCoords(e);
+                handleTraceMove(coords.x, coords.y);
+            });
+
+            canvas.addEventListener('mouseup', handleTraceEnd);
+            canvas.addEventListener('mouseleave', handleTraceEnd);
+
+            // Header buttons
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                loadItem(gameState.category, gameState.currentItem);
+            });
+
+            document.getElementById('menuBtn').addEventListener('click', () => {
+                document.getElementById('categoryOverlay').classList.add('active');
+            });
+
+            document.getElementById('soundBtn').addEventListener('click', () => {
+                initAudio();
+                settings.soundEnabled = !settings.soundEnabled;
+                document.getElementById('soundBtn').textContent = settings.soundEnabled ? '🔊' : '🔇';
+            });
+
+            // Color picker
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    settings.lineColor = btn.dataset.color;
+                });
+            });
+
+            // Category panel
+            document.getElementById('categoryOverlay').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('categoryOverlay')) {
+                    document.getElementById('categoryOverlay').classList.remove('active');
+                }
+            });
+
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    gameState.category = btn.dataset.category;
+                    updateItemGrid();
+                });
+            });
+
+            document.getElementById('startBtn').addEventListener('click', () => {
+                document.getElementById('categoryOverlay').classList.remove('active');
+                loadItem(gameState.category, gameState.currentItem);
+            });
+
+            // Celebration buttons
+            document.getElementById('traceBtn').addEventListener('click', startTracingMode);
+
+            document.getElementById('nextBtn').addEventListener('click', () => {
+                document.getElementById('celebration').classList.remove('active');
+                goToNext();
+            });
+        }
+
+        function updateItemGrid() {
+            const grid = document.getElementById('itemGrid');
+            const label = document.getElementById('itemLabel');
+            const items = Object.keys(DOT_DATA[gameState.category]);
+
+            label.textContent = gameState.category === 'letters' ? 'Pick a Letter' :
+                               gameState.category === 'numbers' ? 'Pick a Number' : 'Pick a Shape';
+
+            grid.innerHTML = items.map(item => `
+                <button class="item-btn ${item === gameState.currentItem ? 'active' : ''}" data-item="${item}">
+                    ${item}
+                </button>
+            `).join('');
+
+            grid.querySelectorAll('.item-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    grid.querySelectorAll('.item-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    gameState.currentItem = btn.dataset.item;
+                });
+            });
+        }
+
+        function showCelebration() {
+            sounds.win();
+            createConfetti();
+            document.getElementById('celebrationShape').textContent = gameState.currentItem;
+            document.getElementById('celebration').classList.add('active');
+        }
+
+        function createConfetti() {
+            const colors = ['#FF6B9D', '#A855F7', '#3B82F6', '#10B981', '#FBBF24', '#F97316'];
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        function goToNext() {
+            const items = Object.keys(DOT_DATA[gameState.category]);
+            const currentIndex = items.indexOf(gameState.currentItem);
+            const nextIndex = (currentIndex + 1) % items.length;
+            gameState.currentItem = items[nextIndex];
+            loadItem(gameState.category, gameState.currentItem);
+        }
+
+        // ===========================================
+        // INITIALIZATION
+        // ===========================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupCanvas();
+            setupEventListeners();
+            updateItemGrid();
+            loadItem('letters', 'A');
+
+            // Register service worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            }
+        });
+    </script>
+</body>
+</html>
