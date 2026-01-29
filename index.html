@@ -861,18 +861,47 @@
         // ===========================================
 
         let audioContext = null;
+        let audioUnlocked = false;
 
         /**
          * Initialize the audio system
          * Must be called after user interaction (browser requirement)
+         *
+         * iOS/Safari requires special handling:
+         * 1. AudioContext must be created on user gesture
+         * 2. Must call resume() and await it
+         * 3. Play a silent sound to fully "unlock" audio
          */
-        function initAudio() {
+        async function initAudio() {
             if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('Web Audio not supported');
+                    return;
+                }
             }
+
             // Resume if suspended (iOS requirement)
             if (audioContext.state === 'suspended') {
-                audioContext.resume();
+                try {
+                    await audioContext.resume();
+                } catch (e) {
+                    console.log('Could not resume audio context');
+                }
+            }
+
+            // Play silent sound to fully unlock on iOS
+            if (!audioUnlocked && audioContext.state === 'running') {
+                const silentOsc = audioContext.createOscillator();
+                const silentGain = audioContext.createGain();
+                silentGain.gain.value = 0.001; // Nearly silent
+                silentOsc.connect(silentGain);
+                silentGain.connect(audioContext.destination);
+                silentOsc.start();
+                silentOsc.stop(audioContext.currentTime + 0.001);
+                audioUnlocked = true;
+                console.log('Audio unlocked!');
             }
         }
 
@@ -891,22 +920,27 @@
          */
         function playTone(frequency, duration, type = 'sine') {
             if (!settings.soundEnabled || !audioContext) return;
+            if (audioContext.state !== 'running') return;
 
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
 
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
 
-            oscillator.frequency.value = frequency;
-            oscillator.type = type;
+                oscillator.frequency.value = frequency;
+                oscillator.type = type;
 
-            // Start loud, fade out smoothly
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                // Start loud, fade out smoothly
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
 
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + duration);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                console.log('Could not play tone:', e);
+            }
         }
 
         /**
@@ -1236,6 +1270,15 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize the game
             createGame();
+
+            // Unlock audio on first touch/click anywhere (iOS requirement)
+            const unlockAudio = () => {
+                initAudio();
+                document.removeEventListener('touchstart', unlockAudio);
+                document.removeEventListener('click', unlockAudio);
+            };
+            document.addEventListener('touchstart', unlockAudio, { once: true });
+            document.addEventListener('click', unlockAudio, { once: true });
 
             // Header buttons
             document.getElementById('resetBtn').addEventListener('click', () => {
